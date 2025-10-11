@@ -1,0 +1,33 @@
+[project]
+name = "covergen"
+version = "0.1.0"
+description = "Automated cover letter generator that builds LaTeX and PDFs from job descriptions and a CV."
+authors = [{ name = "Your Name", email = "you@example.com" }]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "requests",
+    "beautifulsoup4",
+    "typer[all]",
+    "jinja2",
+    "pydantic",
+    "pydantic-settings",
+    "openai>=1.0",
+    "together",
+]
+
+[project.optional-dependencies]
+develop = [
+    "python-dotenv",
+]
+
+[project.scripts]
+covergen = "covergen.cli:app"
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["covergen"]

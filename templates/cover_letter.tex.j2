@@ -1,0 +1,22 @@
+\documentclass[11pt]{letter}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\signature{ {{ sender.name }} }
+\address{ {{ sender.address|join(' \\ ') }} }
+
+\begin{document}
+
+\begin{letter}{
+{{ recipient.name }}\\
+{{ recipient.company }}\\
+{{ recipient.address|join(' \\ ') }}
+}
+
+\opening{ {{ opening }} }
+
+{{ letter_body }}
+
+\closing{ {{ closing }} }
+
+\end{letter}
+\end{document}

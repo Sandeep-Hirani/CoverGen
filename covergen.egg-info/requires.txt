@@ -1,0 +1,11 @@
+requests
+beautifulsoup4
+typer[all]
+jinja2
+pydantic
+pydantic-settings
+openai>=1.0
+together
+
+[develop]
+python-dotenv

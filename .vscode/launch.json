@@ -1,0 +1,25 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "CoverGen Generate",
+            "type": "python",
+            "request": "launch",
+            "module": "covergen.cli",
+            "args": [
+                "generate",
+                "https://gitwit.pinpointhq.com/en/postings/d09d8ab6-427a-4ea7-800c-40e3b48f71a5"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "envFile": "${workspaceFolder}/.env",
+            "pythonArgs": [
+                "-X",
+                "dev"
+            ]
+        }
+    ]
+}

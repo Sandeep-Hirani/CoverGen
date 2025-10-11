@@ -1,0 +1,108 @@
+Metadata-Version: 2.4
+Name: covergen
+Version: 0.1.0
+Summary: Automated cover letter generator that builds LaTeX and PDFs from job descriptions and a CV.
+Author-email: Your Name <you@example.com>
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: requests
+Requires-Dist: beautifulsoup4
+Requires-Dist: typer[all]
+Requires-Dist: jinja2
+Requires-Dist: pydantic
+Requires-Dist: pydantic-settings
+Requires-Dist: openai>=1.0
+Requires-Dist: together
+Provides-Extra: develop
+Requires-Dist: python-dotenv; extra == "develop"
+
+# CoverGen
+
+Automate your cover letter workflow by pulling job descriptions from the web, blending them with your CV, asking an LLM to draft a personalised letter body, and compiling the result to PDF through LaTeX.
+
+## Features
+- Fetch job descriptions from URLs or local files.
+- Combine the posting with your CV text and optional tweaks (role, tone, extra instructions).
+- Ask a configurable LLM (OpenAI or Together) for a LaTeX-formatted letter body tailored to the role.
+- Inject the response into a configurable LaTeX template and compile to PDF.
+- Snapshot the job description alongside the generated assets for traceability.
+
+## Project Layout
+```
+covergen/
+    cli.py             # Typer CLI entry point
+    config.py          # Pydantic settings (API keys, paths, engines)
+    cv_loader.py       # Reads your CV text from disk
+    job_fetcher.py     # Pulls job descriptions from URLs or files
+    latex.py           # Renders the template and compiles PDFs
+    llm.py             # Thin wrapper over OpenAI / Together clients
+    pipeline.py        # Orchestrates the full workflow
+    prompting.py       # Crafts prompts for the LLM
+templates/
+    cover_letter.tex.j2
+```
+
+## Setup
+1. **Python environment**
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate
+   pip install -e .
+   ```
+
+2. **Environment variables**
+   Create a `.env` file (or export variables) with your API keys and any overrides:
+   ```dotenv
+   LLM_PROVIDER=openai
+   LLM_MODEL=gpt-4-turbo
+   LLM_TEMPERATURE=0.2
+   OPENAI_API_KEY=sk-...
+   # TOGETHER_API_KEY=... (set if LLM_PROVIDER=together)
+   CV_PATH=data/cv.txt
+   LATEX_TEMPLATE=templates/cover_letter.tex.j2
+   LATEX_ENGINE=xelatex
+   OUTPUT_DIR=output
+   ```
+   The defaults match the sample values above; adjust paths if needed.
+
+3. **Prepare your CV text**
+   Replace `data/cv.txt` with a clean, plain-text version of your CV. Use blank lines to separate sections and bullet points to help the LLM.
+
+4. **LaTeX toolchain**
+   Install a LaTeX engine (`xelatex`, `pdflatex`, etc.) accessible on your `$PATH`. On macOS you can use MacTeX, on Ubuntu install `texlive-full` or a slimmer variant.
+
+## Usage
+Generate a cover letter by pointing to a job description and supplying sender/recipient details. Address options can be repeated for multiple lines.
+```bash
+covergen generate "https://example.com/job123" \
+  --role "Senior Backend Engineer" \
+  --company "Example Corp" \
+  --tone "enthusiastic" \
+  --instructions "Highlight distributed systems experience." \
+  --sender-name "Jane Doe" \
+  --sender-address "123 Main Street" --sender-address "San Francisco, CA" \
+  --recipient-name "Alex Hiring" \
+  --recipient-company "Example Corp" \
+  --recipient-address "456 Market Street" --recipient-address "San Francisco, CA"
+```
+
+The command writes:
+- `output/<stem>.tex` – fully rendered LaTeX letter
+- `output/<stem>.pdf` – compiled PDF (skip with `--skip-pdf`)
+- `output/<stem>.job.txt` – job description snapshot
+
+Display current settings:
+```bash
+covergen show-settings
+```
+
+## Notes
+- LinkedIn and other authenticated sources may require you to download the job description HTML manually; pass the saved file path to `covergen generate`.
+- The LLM client uses chat completions. Switch models via `LLM_MODEL` and adjust `LLM_PROVIDER` / API keys as needed.
+- To use Together.ai, install dependencies (already bundled) and set `LLM_PROVIDER=together`, `TOGETHER_API_KEY=...`, and a supported `LLM_MODEL` such as `openai/gpt-oss-20b`.
+- Failed LaTeX compilations will surface the engine output. Inspect the `.log` file generated next to the `.tex` if this happens.
+
+## Next Ideas
+- Add providers beyond the current OpenAI/Together options (e.g., Anthropic, local models).
+- Implement browser automation for sites that need authentication or dynamic rendering.
+- Maintain a library of role-specific prompt presets.
