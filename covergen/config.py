@@ -74,8 +74,23 @@ class Settings(BaseSettings):
     )
     llm_model: str = Field(
         default="gpt-4-turbo",
-        validation_alias=AliasChoices("LLM_MODEL", "OPENAI_MODEL", "llm_model"),
-        description="Model identifier passed to the configured provider.",
+        validation_alias=AliasChoices("LLM_MODEL", "llm_model"),
+        description="Default model identifier used when a provider-specific value is not supplied.",
+    )
+    openai_model: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("OPENAI_MODEL", "openai_model"),
+        description="Model identifier used when llm_provider is 'openai'.",
+    )
+    together_model: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("TOGETHER_MODEL", "together_model"),
+        description="Model identifier used when llm_provider is 'together'.",
+    )
+    openrouter_model: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("OPENROUTER_MODEL", "openrouter_model"),
+        description="Model identifier used when llm_provider is 'openrouter'.",
     )
     temperature: float = Field(
         default=0.2,
@@ -184,7 +199,26 @@ class Settings(BaseSettings):
             raise ValueError("TOGETHER_API_KEY is required when llm_provider is 'together'.")
         if self.llm_provider == "openrouter" and not self.openrouter_api_key:
             raise ValueError("OPENROUTER_API_KEY is required when llm_provider is 'openrouter'.")
+        if not self.model_for_provider(self.llm_provider):
+            raise ValueError(f"No model configured for provider '{self.llm_provider}'.")
         return self
+
+    def model_for_provider(self, provider: str) -> str:
+        """Return the effective model identifier for the requested provider."""
+
+        provider_normalized = (provider or "").lower()
+        if provider_normalized == "openai":
+            model = self.openai_model or self.llm_model
+        elif provider_normalized == "together":
+            model = self.together_model or self.llm_model
+        elif provider_normalized == "openrouter":
+            model = self.openrouter_model or self.llm_model
+        else:  # pragma: no cover - defensive
+            raise ValueError(f"Unsupported provider: {provider}")
+
+        if not model:
+            raise ValueError(f"No model configured for provider '{provider}'.")
+        return model
 
 
 settings = Settings()

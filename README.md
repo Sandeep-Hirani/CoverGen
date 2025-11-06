@@ -40,6 +40,9 @@ templates/
    TOGETHER_API_KEY=your-together-api-key
    OPENROUTER_API_KEY=your-openrouter-api-key
    LLM_MODEL=gpt-4-turbo
+   OPENAI_MODEL=gpt-4-turbo
+   TOGETHER_MODEL=togethercomputer/llama-3.1-8b-instruct
+   OPENROUTER_MODEL=anthropic/claude-3.5-sonnet
    LLM_TEMPERATURE=0.2
 
    CV_PATH=data/cv.txt
@@ -55,7 +58,7 @@ templates/
    DEFAULT_CLOSING=Sincerely,
    DEFAULT_TONE=professional
    ```
-   Address lists use `|` as a separator (e.g. `Line 1|Line 2|Country`). Set at least one provider key (`OPENAI_API_KEY`, `TOGETHER_API_KEY`, or `OPENROUTER_API_KEY`) matching `LLM_PROVIDER`. When omitted, the recipient name and company are derived automatically from the job posting metadata.
+   Address lists use `|` as a separator (e.g. `Line 1|Line 2|Country`). Set at least one provider key (`OPENAI_API_KEY`, `TOGETHER_API_KEY`, or `OPENROUTER_API_KEY`) matching `LLM_PROVIDER`. Provide the matching model variable (`OPENAI_MODEL`, `TOGETHER_MODEL`, or `OPENROUTER_MODEL`) when you need per-provider configuration; otherwise `LLM_MODEL` acts as a shared fallback. When omitted, the recipient name and company are derived automatically from the job posting metadata.
 
 3. **Prepare your CV text**
    Copy `data/cv.sample.txt` to `data/cv.txt` (ignored by git) and replace the placeholder content with a clean, plain-text version of your CV. Use blank lines to separate sections and bullet points to help the LLM.
@@ -91,9 +94,9 @@ covergen show-settings
 
 ## Notes
 - LinkedIn and other authenticated sources may require you to download the job description HTML manually; pass the saved file path to `covergen generate`.
-- The LLM client uses chat completions. Switch models via `LLM_MODEL` and adjust `LLM_PROVIDER` / API keys as needed.
-- To use Together.ai, set `LLM_PROVIDER=together`, provide `TOGETHER_API_KEY`, and choose a supported `LLM_MODEL` such as `togethercomputer/llama-3.1-8b-instruct`.
-- To use OpenRouter, set `LLM_PROVIDER=openrouter`, provide `OPENROUTER_API_KEY`, and choose a model available on the platform (for example, `anthropic/claude-3.5-sonnet`).
+- The LLM client uses chat completions. Switch models via the provider-specific variables (`OPENAI_MODEL`, `TOGETHER_MODEL`, `OPENROUTER_MODEL`) or fall back to `LLM_MODEL`, and adjust `LLM_PROVIDER` / API keys as needed.
+- To use Together.ai, set `LLM_PROVIDER=together`, provide `TOGETHER_API_KEY`, and choose a supported `TOGETHER_MODEL` such as `togethercomputer/llama-3.1-8b-instruct`.
+- To use OpenRouter, set `LLM_PROVIDER=openrouter`, provide `OPENROUTER_API_KEY`, and choose an `OPENROUTER_MODEL` available on the platform (for example, `anthropic/claude-3.5-sonnet`).
 - Failed LaTeX compilations will surface the engine output. Inspect the `.log` file generated next to the `.tex` if this happens.
 
 ## Next Ideas

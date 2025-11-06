@@ -79,7 +79,7 @@ def run_pipeline(config: PipelineConfig) -> PipelineResult:
 
     client = LLMClient(
         provider=settings.llm_provider,
-        model=settings.llm_model,
+        model=settings.model_for_provider(settings.llm_provider),
         temperature=settings.temperature,
         openai_api_key=settings.openai_api_key,
         together_api_key=settings.together_api_key,

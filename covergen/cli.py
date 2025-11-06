@@ -137,6 +137,9 @@ def show_settings() -> None:
     data = {
         "llm_provider": settings.llm_provider,
         "llm_model": settings.llm_model,
+        "openai_model": settings.openai_model or "(fallback to llm_model)",
+        "together_model": settings.together_model or "(fallback to llm_model)",
+        "openrouter_model": settings.openrouter_model or "(fallback to llm_model)",
         "temperature": settings.temperature,
         "cv_path": settings.cv_path,
         "latex_template": settings.latex_template,
