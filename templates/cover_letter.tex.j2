@@ -1,17 +1,39 @@
 \documentclass[11pt]{letter}
 \usepackage[margin=1in]{geometry}
 \usepackage{hyperref}
+\usepackage{microtype}
+\usepackage{setspace}
+{% raw %}
+\makeatletter
+\longindentation=0pt
+\renewcommand*{\signature}[1]{%
+  \def\fromsig{%
+    \par\nobreak
+    \vspace{0.6\baselineskip}%
+    {\raggedleft #1\par}}}
+\makeatother
+{% endraw %}
 \signature{ {{ sender.name }} }
 \address{ {{ sender.address|join(' \\ ') }} }
-
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.75\baselineskip}
+\setstretch{1.15}
+\date{\today}
 \begin{document}
 
 \begin{letter}{
-{{ recipient.name }}\\
-{{ recipient.company }}\\
-{{ recipient.address|join(' \\ ') }}
+{% set has_named_contact = recipient.name and (recipient.company | default('') | lower != recipient.name | lower) %}
+{% if has_named_contact %}
+  {{ recipient.name }}\\
+  {{ recipient.company or '' }}{% if recipient.company and recipient.address %}\\{% endif %}
+  {{ recipient.address|reject('equalto', '')|join(' \\ ') }}
+{% else %}
+  {{ recipient.company or '' }}{% if recipient.company and recipient.address %}\\{% endif %}
+  {{ recipient.address|reject('equalto', '')|join(' \\ ') }}
+{% endif %}
 }
 
+\raggedright
 \opening{ {{ opening }} }
 
 {{ letter_body }}

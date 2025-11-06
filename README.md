@@ -57,7 +57,7 @@ templates/
    Address lists use `|` as a separator (e.g. `Line 1|Line 2|Country`). Set at least one provider key (`OPENAI_API_KEY` or `TOGETHER_API_KEY`) matching `LLM_PROVIDER`. When omitted, the recipient name and company are derived automatically from the job posting metadata.
 
 3. **Prepare your CV text**
-   Replace `data/cv.txt` with a clean, plain-text version of your CV. Use blank lines to separate sections and bullet points to help the LLM.
+   Copy `data/cv.sample.txt` to `data/cv.txt` (ignored by git) and replace the placeholder content with a clean, plain-text version of your CV. Use blank lines to separate sections and bullet points to help the LLM.
 
 4. **LaTeX toolchain**
    Install a LaTeX engine (`xelatex`, `pdflatex`, etc.) accessible on your `$PATH`. On macOS you can use MacTeX, on Ubuntu install `texlive-full` or a slimmer variant.

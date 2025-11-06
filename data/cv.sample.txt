@@ -1,0 +1,48 @@
+Alex Candidate
+Email: alex.candidate@example.com | Phone: (000) 555-0100 | github.com/alexcandidate | linkedin.com/in/alexcandidate
+
+---
+
+Education
+
+Example University — M.S. Computer Science, GPA: 3.9
+Aug 2022 – May 2024
+
+Sample College — B.S. Software Engineering, GPA: 3.8
+Aug 2018 – May 2022
+
+---
+
+Experience
+
+Acme Analytics — Software Engineer
+Remote | Jun 2024 – Present
+
+Designed and launched data processing microservices in Python and Go that reduced nightly ETL runtimes by 45%.
+Partnered with product management to deliver analytics dashboards in React and TypeScript, improving customer adoption by 30%.
+Automated deployment pipelines with GitHub Actions and Terraform, shrinking release cycles from bi-weekly to daily.
+
+Northwind Systems — Backend Engineer
+Chicago, IL | Jul 2022 – May 2024
+
+Implemented event-driven architecture on AWS (Lambda, SQS, DynamoDB) to process 5M+ monthly transactions with 99.9% uptime.
+Led adoption of contract testing and observability tooling, cutting MTTR from 90 minutes to 25 minutes.
+Mentored three junior engineers on code quality, service design, and incident response.
+
+---
+
+Technical Skills
+Programming: Python, Go, TypeScript, Java
+Frameworks: FastAPI, Spring Boot, React, Node.js
+Cloud & DevOps: AWS, Docker, Kubernetes, Terraform, GitHub Actions
+Data: PostgreSQL, DynamoDB, Redis, Snowflake
+
+---
+
+Projects
+
+Intelligent Routing Platform
+Built a logistics optimization tool using simulated annealing and geospatial datasets to lower delivery costs by 18%.
+
+Secure Collaboration Suite
+Delivered a real-time document collaboration stack leveraging WebSockets, CRDTs, and zero-trust authentication patterns.

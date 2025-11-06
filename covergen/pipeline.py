@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import re
+from collections import Counter
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
@@ -63,6 +64,7 @@ def run_pipeline(config: PipelineConfig) -> PipelineResult:
         job_description=job_description,
         explicit_company=config.company,
         recipient_company_hint=config.recipient.company,
+        role_hint=config.role,
     )
 
     context_company = config.company or recipient_company
@@ -185,8 +187,14 @@ def _derive_recipient_company(
     job_description: str,
     explicit_company: str | None,
     recipient_company_hint: str | None,
+    role_hint: str | None,
 ) -> str:
-    for candidate in (explicit_company, recipient_company_hint, _extract_company_name(job_description), _domain_to_company(job_source)):
+    for candidate in (
+        explicit_company,
+        recipient_company_hint,
+        _extract_company_name(job_description, role_hint),
+        _domain_to_company(job_source),
+    ):
         normalized = _normalize_company_name(candidate)
         if normalized:
             return normalized
@@ -222,18 +230,153 @@ def _domain_to_company(job_source: str) -> str | None:
 _COMPANY_PATTERNS = [
     r"(?im)^\s*(?:company|employer)(?:\s+name)?\s*[:\-]\s*(?P<company>[A-Z][A-Za-z0-9&'\-]*(?:\s+[A-Z][A-Za-z0-9&'\-]*){0,4})",
     r"join\s+the\s+(?P<company>[A-Z][A-Za-z0-9&'\-]*(?:\s+[A-Z][A-Za-z0-9&'\-]*){0,4})\s+team",
+    r"job\s+application\s+for\s+[A-Za-z0-9&'\/\-\s]{0,80}?\s+at\s+(?P<company>[A-Z][A-Za-z0-9&'\-]*(?:\s+[A-Z][A-Za-z0-9&'\-]*){0,5})",
+    r"(?:role|opening|position)\s+(?:at|with)\s+(?P<company>[A-Z][A-Za-z0-9&'\-]*(?:\s+[A-Z][A-Za-z0-9&'\-]*){0,4})",
 ]
 
+_COMPANY_TRAILING_STOPWORDS = {
+    "apply",
+    "application",
+    "associate",
+    "careers",
+    "career",
+    "contract",
+    "department",
+    "developer",
+    "development",
+    "engineer",
+    "engineering",
+    "group",
+    "hiring",
+    "hybrid",
+    "intern",
+    "internship",
+    "job",
+    "jobs",
+    "lead",
+    "manager",
+    "managers",
+    "opening",
+    "opportunity",
+    "position",
+    "product",
+    "remote",
+    "role",
+    "software",
+    "team",
+    "teams",
+    "time",
+    "united",
+    "states",
+    "usa",
+    "washington",
+    "seattle",
+    "san",
+    "francisco",
+    "new",
+    "york",
+    "california",
+    "austin",
+    "texas",
+    "boston",
+    "canada",
+    "toronto",
+    "london",
+    "europe",
+    "global",
+    "worldwide",
+    "north",
+    "america",
+    "contractor",
+    "staff",
+    "senior",
+    "principal",
+    "director",
+    "specialist",
+    "scientist",
+    "analyst",
+    "consultant",
+    "coach",
+    "fellow",
+    "assistant",
+    "support",
+    "customer",
+    "success",
+    "solutions",
+    "operations",
+    "operations",
+    "sales",
+    "marketing",
+    "service",
+}
 
-def _extract_company_name(job_description: str) -> str | None:
+_COMPANY_ALLOWED_SUFFIXES = {
+    "inc",
+    "inc.",
+    "llc",
+    "l.l.c.",
+    "ltd",
+    "ltd.",
+    "plc",
+    "ag",
+    "gmbh",
+    "bv",
+    "lp",
+    "llp",
+    "co",
+    "co.",
+    "corp",
+    "corporation",
+    "company",
+}
+
+_FREQUENCY_EXCLUSIONS = {
+    "apply",
+    "job",
+    "application",
+    "role",
+    "position",
+    "opening",
+    "team",
+    "teams",
+    "department",
+    "company",
+    "employer",
+    "opportunity",
+    "career",
+    "careers",
+    "remote",
+    "hybrid",
+    "full",
+    "time",
+    "part",
+    "contract",
+    "united",
+    "states",
+    "state",
+    "city",
+    "jobs",
+    "global",
+    "worldwide",
+    "country",
+}
+
+
+def _extract_company_name(job_description: str, role_hint: str | None) -> str | None:
+    role_tokens = _tokenize_role(role_hint)
     for pattern in _COMPANY_PATTERNS:
         match = re.search(pattern, job_description, flags=re.IGNORECASE)
         if not match:
             continue
         raw = match.group("company").strip()
-        normalized = _normalize_company_name(raw)
+        candidate = _sanitize_company_candidate(raw, role_tokens)
+        normalized = _normalize_company_name(candidate)
         if normalized:
             return normalized
+
+    fallback = _guess_company_by_frequency(job_description, role_tokens)
+    if fallback:
+        return fallback
     return None
 
 
@@ -243,6 +386,94 @@ def _normalize_company_name(value: str | None) -> str | None:
     cleaned = re.sub(r"[^A-Za-z0-9 &'\-]", " ", value)
     words = [word.capitalize() for word in cleaned.split() if word.strip()]
     return " ".join(words) if words else None
+
+
+def _sanitize_company_candidate(value: str, role_tokens: set[str]) -> str | None:
+    tokens = [token for token in re.split(r"\s+", value) if token.strip()]
+    cleaned_tokens: list[str] = []
+    for token in tokens:
+        cleaned = re.sub(r"[^A-Za-z0-9&'\-]", "", token)
+        if cleaned:
+            cleaned_tokens.append(cleaned)
+    if not cleaned_tokens:
+        return None
+
+    result = list(cleaned_tokens)
+    while len(result) > 1:
+        last = result[-1]
+        lowered = last.lower()
+        if lowered in _COMPANY_ALLOWED_SUFFIXES:
+            break
+        if lowered in role_tokens or lowered in _COMPANY_TRAILING_STOPWORDS:
+            result.pop()
+            continue
+        if len(last) <= 2 and lowered not in {"ai", "ml", "xr"}:
+            result.pop()
+            continue
+        break
+
+    if not result:
+        result = cleaned_tokens
+    return " ".join(result)
+
+
+def _tokenize_role(role_hint: str | None) -> set[str]:
+    if not role_hint:
+        return set()
+    tokens = re.split(r"[^A-Za-z0-9&'\-]+", role_hint)
+    return {token.strip().lower() for token in tokens if token.strip()}
+
+
+_COMPANY_CONNECTORS = {"of", "and", "the", "&"}
+
+
+def _guess_company_by_frequency(job_description: str, role_tokens: set[str]) -> str | None:
+    if not job_description:
+        return None
+
+    tokens = re.findall(r"[A-Za-z][A-Za-z0-9&'\-]*", job_description)
+    counts: Counter[str] = Counter()
+    first_occurrence: dict[str, int] = {}
+    for idx, token in enumerate(tokens):
+        if not token:
+            continue
+        if not token[0].isupper():
+            continue
+        lowered = token.lower()
+        if lowered in role_tokens or lowered in _COMPANY_TRAILING_STOPWORDS or lowered in _FREQUENCY_EXCLUSIONS:
+            continue
+        if len(lowered) <= 2 and lowered not in {"ai", "ml", "xr"}:
+            continue
+        counts[lowered] += 1
+        if lowered not in first_occurrence:
+            first_occurrence[lowered] = idx
+
+    if not counts:
+        return None
+
+    best_lower, _ = counts.most_common(1)[0]
+    start_idx = first_occurrence[best_lower]
+    candidate_tokens = [tokens[start_idx]]
+
+    next_idx = start_idx + 1
+    while next_idx < len(tokens):
+        token = tokens[next_idx]
+        lowered = token.lower()
+        if lowered in _COMPANY_CONNECTORS:
+            candidate_tokens.append(token)
+            next_idx += 1
+            continue
+        if not token[0].isupper():
+            break
+        if lowered in role_tokens or lowered in _COMPANY_TRAILING_STOPWORDS or lowered in _FREQUENCY_EXCLUSIONS:
+            break
+        if len(lowered) <= 2 and lowered not in {"ai", "ml", "xr"} and lowered not in _COMPANY_ALLOWED_SUFFIXES:
+            break
+        candidate_tokens.append(token)
+        next_idx += 1
+
+    candidate = " ".join(candidate_tokens)
+    return _normalize_company_name(candidate)
 
 
 def _slugify_segment(value: str, *, fallback: str) -> str:
@@ -284,5 +515,33 @@ def _sanitize_letter_body(value: str, *, opening: str, closing: str, sender_name
     while lines and (_matches_phrase(lines[-1], sender_name) or _matches_phrase(lines[-1], closing)):
         lines.pop()
 
-    cleaned = "\n".join(line for line in lines if line.strip())
-    return cleaned.strip()
+    normalized_lines: list[str] = []
+    blank_pending = False
+    for line in lines:
+        if not line.strip():
+            blank_pending = True
+            continue
+        if blank_pending and normalized_lines:
+            normalized_lines.append("")
+            blank_pending = False
+        normalized_lines.append(line)
+
+    cleaned = "\n".join(normalized_lines).strip()
+
+    paragraphs = [paragraph.strip() for paragraph in re.split(r"\n\s*\n", cleaned) if paragraph.strip()]
+    if len(paragraphs) == 1:
+        sentences = re.split(r"(?<=[.!?])\s+", paragraphs[0])
+        if len(sentences) >= 2:
+            midpoint = max(1, len(sentences) // 2)
+            first = " ".join(sentences[:midpoint]).strip()
+            second = " ".join(sentences[midpoint:]).strip()
+            paragraphs = [part for part in (first, second) if part]
+
+    if len(paragraphs) > 3:
+        paragraphs = paragraphs[:3]
+    cleaned = "\n\n".join(paragraphs)
+
+    # Escape common stray special characters that break LaTeX when emitted raw
+    cleaned = re.sub(r"(?<!\\)#", r"\\#", cleaned)
+
+    return cleaned
