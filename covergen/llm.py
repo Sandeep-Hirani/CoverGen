@@ -22,6 +22,7 @@ class LLMClient:
         temperature: float,
         openai_api_key: str | None = None,
         together_api_key: str | None = None,
+        openrouter_api_key: str | None = None,
     ) -> None:
         self._provider = provider
         self._model = model
@@ -39,6 +40,13 @@ class LLMClient:
                     "The 'together' package is required for provider='together'. Install the extra dependency."
                 )
             self._client = Together(api_key=together_api_key)
+        elif provider == "openrouter":
+            if openrouter_api_key is None:
+                raise ValueError("openrouter_api_key must be provided for provider='openrouter'")
+            self._client = OpenAI(
+                api_key=openrouter_api_key,
+                base_url="https://openrouter.ai/api/v1",
+            )
         else:  # pragma: no cover - defensive
             raise ValueError(f"Unsupported provider: {provider}")
 
@@ -54,6 +62,12 @@ class LLMClient:
                 temperature=self._temperature,
             )
         elif self._provider == "together":
+            response = self._client.chat.completions.create(  # type: ignore[attr-defined]
+                model=self._model,
+                messages=payload,
+                temperature=self._temperature,
+            )
+        elif self._provider == "openrouter":
             response = self._client.chat.completions.create(  # type: ignore[attr-defined]
                 model=self._model,
                 messages=payload,

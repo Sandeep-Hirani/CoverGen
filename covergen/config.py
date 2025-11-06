@@ -55,10 +55,10 @@ class Settings(BaseSettings):
             file_secret_settings,
         )
 
-    llm_provider: Literal["openai", "together"] = Field(
+    llm_provider: Literal["openai", "together", "openrouter"] = Field(
         default="openai",
         validation_alias=AliasChoices("LLM_PROVIDER", "llm_provider"),
-        description="Which LLM backend to call (openai or together).",
+        description="Which LLM backend to call (openai, together, or openrouter).",
     )
     openai_api_key: str | None = Field(
         default=None,
@@ -67,6 +67,10 @@ class Settings(BaseSettings):
     together_api_key: str | None = Field(
         default=None,
         validation_alias=AliasChoices("TOGETHER_API_KEY", "together_api_key"),
+    )
+    openrouter_api_key: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("OPENROUTER_API_KEY", "openrouter_api_key"),
     )
     llm_model: str = Field(
         default="gpt-4-turbo",
@@ -178,6 +182,8 @@ class Settings(BaseSettings):
             raise ValueError("OPENAI_API_KEY is required when llm_provider is 'openai'.")
         if self.llm_provider == "together" and not self.together_api_key:
             raise ValueError("TOGETHER_API_KEY is required when llm_provider is 'together'.")
+        if self.llm_provider == "openrouter" and not self.openrouter_api_key:
+            raise ValueError("OPENROUTER_API_KEY is required when llm_provider is 'openrouter'.")
         return self
 
 

@@ -5,7 +5,7 @@ Automate your cover letter workflow by pulling job descriptions from the web, bl
 ## Features
 - Fetch job descriptions from URLs or local files.
 - Combine the posting with your CV text and optional tweaks (role, tone, extra instructions).
-- Ask a configurable LLM (OpenAI or Together) for a LaTeX-formatted letter body tailored to the role.
+- Ask a configurable LLM (OpenAI, Together, or OpenRouter) for a LaTeX-formatted letter body tailored to the role.
 - Inject the response into a configurable LaTeX template and compile to PDF.
 - Snapshot the job description alongside the generated assets for traceability.
 
@@ -17,7 +17,7 @@ covergen/
     cv_loader.py       # Reads your CV text from disk
     job_fetcher.py     # Pulls job descriptions from URLs or files
     latex.py           # Renders the template and compiles PDFs
-    llm.py             # Thin wrapper over OpenAI / Together clients
+    llm.py             # Thin wrapper over OpenAI / Together / OpenRouter clients
     pipeline.py        # Orchestrates the full workflow
     prompting.py       # Crafts prompts for the LLM
 templates/
@@ -38,6 +38,7 @@ templates/
    LLM_PROVIDER=openai
    OPENAI_API_KEY=sk-...
    TOGETHER_API_KEY=your-together-api-key
+   OPENROUTER_API_KEY=your-openrouter-api-key
    LLM_MODEL=gpt-4-turbo
    LLM_TEMPERATURE=0.2
 
@@ -54,7 +55,7 @@ templates/
    DEFAULT_CLOSING=Sincerely,
    DEFAULT_TONE=professional
    ```
-   Address lists use `|` as a separator (e.g. `Line 1|Line 2|Country`). Set at least one provider key (`OPENAI_API_KEY` or `TOGETHER_API_KEY`) matching `LLM_PROVIDER`. When omitted, the recipient name and company are derived automatically from the job posting metadata.
+   Address lists use `|` as a separator (e.g. `Line 1|Line 2|Country`). Set at least one provider key (`OPENAI_API_KEY`, `TOGETHER_API_KEY`, or `OPENROUTER_API_KEY`) matching `LLM_PROVIDER`. When omitted, the recipient name and company are derived automatically from the job posting metadata.
 
 3. **Prepare your CV text**
    Copy `data/cv.sample.txt` to `data/cv.txt` (ignored by git) and replace the placeholder content with a clean, plain-text version of your CV. Use blank lines to separate sections and bullet points to help the LLM.
@@ -92,9 +93,10 @@ covergen show-settings
 - LinkedIn and other authenticated sources may require you to download the job description HTML manually; pass the saved file path to `covergen generate`.
 - The LLM client uses chat completions. Switch models via `LLM_MODEL` and adjust `LLM_PROVIDER` / API keys as needed.
 - To use Together.ai, set `LLM_PROVIDER=together`, provide `TOGETHER_API_KEY`, and choose a supported `LLM_MODEL` such as `togethercomputer/llama-3.1-8b-instruct`.
+- To use OpenRouter, set `LLM_PROVIDER=openrouter`, provide `OPENROUTER_API_KEY`, and choose a model available on the platform (for example, `anthropic/claude-3.5-sonnet`).
 - Failed LaTeX compilations will surface the engine output. Inspect the `.log` file generated next to the `.tex` if this happens.
 
 ## Next Ideas
-- Add providers beyond the current OpenAI/Together options (e.g., Anthropic, local models).
+- Add providers beyond the current OpenAI/Together/OpenRouter options (e.g., Anthropic, local models).
 - Implement browser automation for sites that need authentication or dynamic rendering.
 - Maintain a library of role-specific prompt presets.

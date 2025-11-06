@@ -83,6 +83,7 @@ def run_pipeline(config: PipelineConfig) -> PipelineResult:
         temperature=settings.temperature,
         openai_api_key=settings.openai_api_key,
         together_api_key=settings.together_api_key,
+        openrouter_api_key=settings.openrouter_api_key,
     )
     raw_letter_body = client.generate(messages)
     letter_body = _sanitize_letter_body(
